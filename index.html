@@ -10,18 +10,18 @@
     <div>
         <h2>WebAssembly Test</h2>
         <input type="text" id="hashInput" placeholder="Enter text to hash">
-        <button onclick="calculateHashClick()">Calculate Hash</button>
+        <button id="hashButton">Calculate Hash</button>
         <p id="hashResult"></p>
 
         <input type="number" id="num1" placeholder="Number 1">
         <input type="number" id="num2" placeholder="Number 2">
-        <button onclick="addNumbersClick()">Add Numbers</button>
+        <button id="addButton">Add Numbers</button>
         <p id="addResult"></p>
     </div>
 
     <div>
         <h2>Blockchain Connection</h2>
-        <button onclick="connectWallet()">Connect Wallet</button>
+        <button id="connectButton">Connect Wallet</button>
         <p id="walletAddress"></p>
     </div>
 
@@ -29,22 +29,42 @@
     <script type="module">
         import init, { calculate_hash, add_numbers } from './pkg/wasm_lib.js';
 
-        window.calculateHashClick = async () => {
-            await init();
-            const input = document.getElementById('hashInput').value;
-            const result = calculate_hash(input);
-            document.getElementById('hashResult').textContent = result;
-        };
+        // Initialize the WASM module
+        async function initWasm() {
+            try {
+                await init();
+                console.log("WASM initialized successfully");
+            } catch (error) {
+                console.error("Failed to initialize WASM:", error);
+            }
+        }
 
-        window.addNumbersClick = async () => {
-            await init();
-            const num1 = parseInt(document.getElementById('num1').value);
-            const num2 = parseInt(document.getElementById('num2').value);
-            const result = add_numbers(num1, num2);
-            document.getElementById('addResult').textContent = `Result: ${result}`;
-        };
+        // Initialize when the page loads
+        initWasm();
 
-        window.connectWallet = async () => {
+        // Add event listeners after the module is loaded
+        document.getElementById('hashButton').addEventListener('click', async () => {
+            try {
+                const input = document.getElementById('hashInput').value;
+                const result = calculate_hash(input);
+                document.getElementById('hashResult').textContent = result;
+            } catch (error) {
+                console.error("Hash calculation error:", error);
+            }
+        });
+
+        document.getElementById('addButton').addEventListener('click', async () => {
+            try {
+                const num1 = parseInt(document.getElementById('num1').value);
+                const num2 = parseInt(document.getElementById('num2').value);
+                const result = add_numbers(num1, num2);
+                document.getElementById('addResult').textContent = `Result: ${result}`;
+            } catch (error) {
+                console.error("Addition error:", error);
+            }
+        });
+
+        document.getElementById('connectButton').addEventListener('click', async () => {
             if (typeof window.ethereum !== 'undefined') {
                 try {
                     const accounts = await window.ethereum.request({ 
@@ -58,7 +78,7 @@
             } else {
                 alert('Please install MetaMask!');
             }
-        };
+        });
     </script>
 </body>
 </html> 

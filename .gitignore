@@ -1,0 +1,33 @@
+# Rust/Cargo
+/target/
+**/target/
+Cargo.lock
+
+# WebAssembly
+/wasm-lib/pkg/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Node modules (if you add npm later)
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Environment files
+.env
+.env.local
+
+# Build output
+dist/
+build/
+
+# Debug files
+*.log 
