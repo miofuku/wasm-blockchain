@@ -1,11 +1,40 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub fn calculate_hash(input: &str) -> String {
-    format!("Hashed: {}", input)
+pub struct SecureOrder {
+    subtotal: f64,
+    tax_rate: f64,
 }
 
 #[wasm_bindgen]
-pub fn add_numbers(a: i32, b: i32) -> i32 {
-    a + b
+impl SecureOrder {
+    #[wasm_bindgen(constructor)]
+    pub fn new(tax_rate: f64) -> SecureOrder {
+        SecureOrder {
+            subtotal: 0.0,
+            tax_rate,
+        }
+    }
+
+    // Simulate secure price calculation in TEE
+    pub fn calculate_total(&self) -> f64 {
+        let tax = self.subtotal * self.tax_rate;
+        (self.subtotal + tax).round() * 100.0 / 100.0 // Round to 2 decimal places
+    }
+
+    // Simulate secure item addition in TEE
+    pub fn add_item(&mut self, price: f64, quantity: u32) {
+        self.subtotal += price * quantity as f64;
+    }
+
+    // Get subtotal (for display purposes)
+    pub fn get_subtotal(&self) -> f64 {
+        self.subtotal
+    }
+}
+
+// Simulate secure hash generation for order ID
+#[wasm_bindgen]
+pub fn generate_order_id(timestamp: f64) -> String {
+    format!("ORDER-{}-TEE", (timestamp as u64 % 10000))
 } 

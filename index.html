@@ -2,81 +2,109 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>WebAssembly Blockchain Demo</title>
+    <title>Secure WebAssembly Shopping Demo</title>
+    <style>
+        .product {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px;
+            display: inline-block;
+        }
+        .cart {
+            border: 2px solid #007bff;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .tee-secure {
+            color: green;
+            font-size: 0.8em;
+        }
+    </style>
 </head>
 <body>
-    <h1>WebAssembly Blockchain Demo</h1>
+    <h1>Secure WebAssembly Shopping Demo</h1>
+    <p class="tee-secure">🔒 Calculations performed in TEE-simulated environment</p>
     
-    <div>
-        <h2>WebAssembly Test</h2>
-        <input type="text" id="hashInput" placeholder="Enter text to hash">
-        <button id="hashButton">Calculate Hash</button>
-        <p id="hashResult"></p>
-
-        <input type="number" id="num1" placeholder="Number 1">
-        <input type="number" id="num2" placeholder="Number 2">
-        <button id="addButton">Add Numbers</button>
-        <p id="addResult"></p>
+    <div id="products">
+        <div class="product">
+            <h3>Product A</h3>
+            <p>Price: $10.00</p>
+            <input type="number" id="quantityA" min="0" value="0">
+            <button onclick="addToCart(10.00, 'quantityA')">Add to Cart</button>
+        </div>
+        <div class="product">
+            <h3>Product B</h3>
+            <p>Price: $25.00</p>
+            <input type="number" id="quantityB" min="0" value="0">
+            <button onclick="addToCart(25.00, 'quantityB')">Add to Cart</button>
+        </div>
     </div>
 
-    <div>
-        <h2>Blockchain Connection</h2>
-        <button id="connectButton">Connect Wallet</button>
-        <p id="walletAddress"></p>
+    <div class="cart">
+        <h2>Shopping Cart</h2>
+        <p>Subtotal: $<span id="subtotal">0.00</span></p>
+        <p>Tax (10%): $<span id="tax">0.00</span></p>
+        <p>Total: $<span id="total">0.00</span></p>
+        
+        <button id="checkoutButton">Checkout with MetaMask</button>
+        <p id="orderStatus"></p>
     </div>
 
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
     <script type="module">
-        import init, { calculate_hash, add_numbers } from './pkg/wasm_lib.js';
+        import init, { SecureOrder, generate_order_id } from './pkg/wasm_lib.js';
 
-        // Initialize the WASM module
-        async function initWasm() {
+        let secureOrder;
+        
+        async function initializeStore() {
             try {
                 await init();
-                console.log("WASM initialized successfully");
+                // Initialize with 10% tax rate
+                secureOrder = new SecureOrder(0.10);
+                console.log("Secure TEE environment initialized");
             } catch (error) {
-                console.error("Failed to initialize WASM:", error);
+                console.error("Failed to initialize secure environment:", error);
             }
         }
 
-        // Initialize when the page loads
-        initWasm();
+        // Initialize when page loads
+        initializeStore();
 
-        // Add event listeners after the module is loaded
-        document.getElementById('hashButton').addEventListener('click', async () => {
-            try {
-                const input = document.getElementById('hashInput').value;
-                const result = calculate_hash(input);
-                document.getElementById('hashResult').textContent = result;
-            } catch (error) {
-                console.error("Hash calculation error:", error);
+        // Make addToCart available globally
+        window.addToCart = async (price, quantityId) => {
+            const quantity = parseInt(document.getElementById(quantityId).value);
+            if (quantity > 0) {
+                secureOrder.add_item(price, quantity);
+                updateCart();
             }
-        });
+        };
 
-        document.getElementById('addButton').addEventListener('click', async () => {
-            try {
-                const num1 = parseInt(document.getElementById('num1').value);
-                const num2 = parseInt(document.getElementById('num2').value);
-                const result = add_numbers(num1, num2);
-                document.getElementById('addResult').textContent = `Result: ${result}`;
-            } catch (error) {
-                console.error("Addition error:", error);
-            }
-        });
+        function updateCart() {
+            const subtotal = secureOrder.get_subtotal();
+            const total = secureOrder.calculate_total();
+            const tax = total - subtotal;
 
-        document.getElementById('connectButton').addEventListener('click', async () => {
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            document.getElementById('tax').textContent = tax.toFixed(2);
+            document.getElementById('total').textContent = total.toFixed(2);
+        }
+
+        document.getElementById('checkoutButton').addEventListener('click', async () => {
             if (typeof window.ethereum !== 'undefined') {
                 try {
                     const accounts = await window.ethereum.request({ 
                         method: 'eth_requestAccounts' 
                     });
-                    document.getElementById('walletAddress').textContent = 
-                        `Connected: ${accounts[0]}`;
+                    const orderId = generate_order_id(Date.now());
+                    document.getElementById('orderStatus').innerHTML = 
+                        `Order ${orderId} confirmed!<br>Wallet: ${accounts[0]}`;
                 } catch (error) {
-                    console.error('Error connecting to wallet:', error);
+                    console.error('Error processing order:', error);
+                    document.getElementById('orderStatus').textContent = 
+                        'Error processing order';
                 }
             } else {
-                alert('Please install MetaMask!');
+                alert('Please install MetaMask to checkout!');
             }
         });
     </script>
