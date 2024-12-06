@@ -30,13 +30,13 @@
             <h3>Product A</h3>
             <p>Price: $10.00</p>
             <input type="number" id="quantityA" min="0" value="0">
-            <button onclick="addToCart(10.00, 'quantityA')">Add to Cart</button>
+            <button id="addA">Add to Cart</button>
         </div>
         <div class="product">
             <h3>Product B</h3>
             <p>Price: $25.00</p>
             <input type="number" id="quantityB" min="0" value="0">
-            <button onclick="addToCart(25.00, 'quantityB')">Add to Cart</button>
+            <button id="addB">Add to Cart</button>
         </div>
     </div>
 
@@ -50,34 +50,62 @@
         <p id="orderStatus"></p>
     </div>
 
-    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <script type="module">
-        import init, { SecureOrder, generate_order_id } from './pkg/wasm_lib.js';
-
         let secureOrder;
+        let wasmModule;
         
         async function initializeStore() {
             try {
-                await init();
+                wasmModule = await import('./pkg/wasm_lib.js');
+                await wasmModule.default();
                 // Initialize with 10% tax rate
-                secureOrder = new SecureOrder(0.10);
+                secureOrder = new wasmModule.SecureOrder(0.10);
                 console.log("Secure TEE environment initialized");
+                
+                // Add event listeners after WASM is initialized
+                setupEventListeners();
             } catch (error) {
                 console.error("Failed to initialize secure environment:", error);
             }
         }
 
-        // Initialize when page loads
-        initializeStore();
+        function setupEventListeners() {
+            document.getElementById('addA').addEventListener('click', () => {
+                addToCart(10.00, 'quantityA');
+            });
 
-        // Make addToCart available globally
-        window.addToCart = async (price, quantityId) => {
+            document.getElementById('addB').addEventListener('click', () => {
+                addToCart(25.00, 'quantityB');
+            });
+
+            document.getElementById('checkoutButton').addEventListener('click', async () => {
+                if (typeof window.ethereum !== 'undefined') {
+                    try {
+                        const accounts = await window.ethereum.request({ 
+                            method: 'eth_requestAccounts' 
+                        });
+                        const orderId = wasmModule.generate_order_id(Date.now());
+                        document.getElementById('orderStatus').innerHTML = 
+                            `Order ${orderId} confirmed!<br>Wallet: ${accounts[0]}`;
+                    } catch (error) {
+                        console.error('Error processing order:', error);
+                        document.getElementById('orderStatus').textContent = 
+                            'Error processing order';
+                    }
+                } else {
+                    alert('Please install MetaMask to checkout!');
+                }
+            });
+        }
+
+        function addToCart(price, quantityId) {
             const quantity = parseInt(document.getElementById(quantityId).value);
             if (quantity > 0) {
                 secureOrder.add_item(price, quantity);
                 updateCart();
             }
-        };
+        }
 
         function updateCart() {
             const subtotal = secureOrder.get_subtotal();
@@ -89,24 +117,8 @@
             document.getElementById('total').textContent = total.toFixed(2);
         }
 
-        document.getElementById('checkoutButton').addEventListener('click', async () => {
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    const accounts = await window.ethereum.request({ 
-                        method: 'eth_requestAccounts' 
-                    });
-                    const orderId = generate_order_id(Date.now());
-                    document.getElementById('orderStatus').innerHTML = 
-                        `Order ${orderId} confirmed!<br>Wallet: ${accounts[0]}`;
-                } catch (error) {
-                    console.error('Error processing order:', error);
-                    document.getElementById('orderStatus').textContent = 
-                        'Error processing order';
-                }
-            } else {
-                alert('Please install MetaMask to checkout!');
-            }
-        });
+        // Initialize when page loads
+        initializeStore();
     </script>
 </body>
 </html> 
