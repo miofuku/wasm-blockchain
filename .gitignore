@@ -5,6 +5,7 @@ Cargo.lock
 
 # WebAssembly
 /wasm-lib/pkg/
+/pkg/
 
 # IDE specific files
 .vscode/

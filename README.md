@@ -21,14 +21,21 @@ This project demonstrates the integration of WebAssembly (Wasm) with blockchain 
 
    This will create a `pkg` directory containing the compiled WebAssembly code.
 
-2. **Start the Local Server**
+2. # Go back to root directory and create pkg directory
+   ```bash
+   cd ..
+   mkdir -p pkg
+   cp -r wasm-lib/pkg/* pkg/
+   ```
 
-   From the project root directory:
+3. **Start the Local Server**
+
+   From the project **root** directory:
    ```bash
    python -m http.server 8000
    ```
 
-3. **Access the Application**
+4. **Access the Application**
 
    Open your web browser and navigate to:
    ```
